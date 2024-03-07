@@ -3,10 +3,11 @@ from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.filters import Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from aiogram.types import FSInputFile
 
 from data import *
 from Buttons import Total_buttons, One_buttons, THREE_BUTTONS
-from functions import check_regist, append_id_number, append_full_info_in_xlsx
+from functions import *
 
 bot = Bot("6257332824:AAFF7VtktI21y_Cj0hSKcRbYHrrxfG5kC-I")
 dp = Dispatcher()
@@ -34,54 +35,80 @@ async def start_bot(message: Message, state: FSMContext) -> None:
     else:
         await message.answer(text=TEXT_RST)
 
-@dp.message(Form.name, F.text)
-async def name_query(message: Message, state: FSMContext) -> None:
-    await state.update_data(name=message.text)
-    await state.set_state(Form.mail)
+    print(message.chat.id)
 
-    await message.answer(text=TEXT_EMAIL)
+@dp.message(Command(commands="file"), F.text)
+async def command_file(msg: Message):
+    table = FSInputFile("Data.xlsx", filename="Data.xlsx")
+
+    await msg.answer_document(document=table)
+
+@dp.message(Form.name, F.text)
+async def query_name(msg: Message, state: FSMContext) -> None:
+    if check_name(msg.text):
+        await state.update_data(name=msg.text)
+        await state.set_state(Form.mail)
+
+        await msg.answer(text=TEXT_EMAIL)
+    else:
+        await msg.answer(text=TEXT_ANSWER)
 
 @dp.message(Form.mail, F.text)
-async def name_query(message: Message, state: FSMContext) -> None:
+async def query_mail(message: Message, state: FSMContext) -> None:
     await state.update_data(mail=message.text)
     await state.set_state(Form.number_phone)
 
     await message.answer(text=TEXT_NUMBER)
 
 @dp.message(Form.number_phone, F.text)
-async def name_query(message: Message, state: FSMContext) -> None:
-    await state.update_data(number_phone=message.text)
-    await state.set_state(Form.school)
+async def query_num_phone(msg: Message, state: FSMContext) -> None:
+    if check_num_phone(msg.text):
+        await state.update_data(number_phone=msg.text)
+        await state.set_state(Form.school)
 
-    await message.answer(text=TEXT_SCHOOL)
+        await msg.answer(text=TEXT_SCHOOL)
+    else:
+        await msg.answer(text=TEXT_ANSWER)
 
 @dp.message(Form.school, F.text)
-async def name_query(message: Message, state: FSMContext) -> None:
-    await state.update_data(school=message.text)
-    await state.set_state(Form.class_school)
+async def query_school(msg: Message, state: FSMContext) -> None:
+    if check_school(msg.text):
+        await state.update_data(school=msg.text)
+        await state.set_state(Form.class_school)
 
-    await message.answer(text=TEXT_CLASS)
+        await msg.answer(text=TEXT_CLASS)
+    else:
+        await msg.answer(text=TEXT_ANSWER)
 
 @dp.message(Form.class_school, F.text)
-async def name_query(message: Message, state: FSMContext) -> None:
-    await state.update_data(class_school=message.text)
-    await state.set_state(Form.parent_name)
+async def query_class(msg: Message, state: FSMContext) -> None:
+    if check_class(msg.text):
+        await state.update_data(class_school=msg.text)
+        await state.set_state(Form.parent_name)
 
-    await message.answer(text=TEXT_NAME_PARENTS)
+        await msg.answer(text=TEXT_NAME_PARENTS)
+    else:
+        await msg.answer(text=TEXT_ANSWER)
 
 @dp.message(Form.parent_name, F.text)
-async def name_query(message: Message, state: FSMContext) -> None:
-    await state.update_data(parent_name=message.text)
-    await state.set_state(Form.number_parents)
+async def query_parent_name(msg: Message, state: FSMContext) -> None:
+    if check_name(msg.text):
+        await state.update_data(parent_name=msg.text)
+        await state.set_state(Form.number_parents)
 
-    await message.answer(text=TEXT_NUMBER_PARENTS)
+        await msg.answer(text=TEXT_NUMBER_PARENTS)
+    else:
+        await msg.answer(text=TEXT_ANSWER)
 
 @dp.message(Form.number_parents, F.text)
-async def name_query(message: Message, state: FSMContext) -> None:
-    await state.update_data(number_parents=message.text)
-    await state.set_state(Form.one_issue)
+async def query_number_parents(msg: Message, state: FSMContext) -> None:
+    if check_num_phone(msg.text):
+        await state.update_data(number_parents=msg.text)
+        await state.set_state(Form.one_issue)
 
-    await message.answer(text=TEXT_NEXT, reply_markup=Total_buttons)
+        await msg.answer(text=TEXT_NEXT, reply_markup=Total_buttons)
+    else:
+        await msg.answer(text=TEXT_ANSWER)
 
 @dp.message(Form.one_issue, F.text)
 async def one_issue(message: Message, state: FSMContext) -> None:
@@ -113,7 +140,8 @@ async def regestration(message: Message, state: FSMContext):
     append_full_info_in_xlsx(arr)
 
     await state.clear()
-    await message.answer(text=TEXT_REGIST, reply_markup=ReplyKeyboardRemove())
+
+    await message.answer(text=TEXT_REGIST, reply_markup=ReplyKeyboardRemove(), parse_mode="HTML")
 
 @dp.message(Form.registration, F.text == "НЕТ❌")
 async def not_registration(message: Message, state: FSMContext) -> None:
