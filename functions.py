@@ -19,6 +19,15 @@ def append_full_info_in_xlsx(info_user: list[str]) -> None:
     wb.save(fn)
     wb.close()
 
+def append_in_Feedback_file(feedback: list[str]) -> None:
+    fn = "Feedback.xlsx"
+    wb = load_workbook(fn)
+    ws = wb["Data"]
+
+    ws.append(feedback)
+    wb.save(fn)
+    wb.close()
+
 def check_name(query: str) -> bool:
     try:
         name, surname = query.split()

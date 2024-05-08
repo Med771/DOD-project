@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
 
 from data import *
-from Buttons import Total_buttons, One_buttons, THREE_BUTTONS
+from Buttons import *
 from functions import *
 
 bot = Bot("6257332824:AAFF7VtktI21y_Cj0hSKcRbYHrrxfG5kC-I")
@@ -25,6 +25,12 @@ class Form(StatesGroup):
 
     registration = State()
 
+class value_Feedback(StatesGroup):
+    f_one, f_two, f_three, f_four, f_five, f_end = [State() for _ in range(6)]  # f - feedback
+
+class report(StatesGroup):
+    ...
+
 @dp.message(Command(commands="start"), F.text)
 async def start_bot(message: Message, state: FSMContext) -> None:
     if check_regist(str(message.chat.id)):
@@ -42,6 +48,9 @@ async def command_file(msg: Message):
     table = FSInputFile("Data.xlsx", filename="Data.xlsx")
 
     await msg.answer_document(document=table)
+
+'''@dp.message(Command(commands="feedback"), F.text)
+async def command_feedback(msg: Message):'''
 
 @dp.message(Form.name, F.text)
 async def query_name(msg: Message, state: FSMContext) -> None:
@@ -132,7 +141,7 @@ async def three_issue(message: Message, state: FSMContext) -> None:
     await message.answer(text=TEXT_LIST.format(data["name"], data["mail"], data["number_phone"], data["school"], data["class_school"], data["parent_name"], data["number_parents"]), reply_markup=Total_buttons)
 
 @dp.message(Form.registration, F.text == "ДА🤝")
-async def regestration(message: Message, state: FSMContext):
+async def registration(message: Message, state: FSMContext):
     data = await state.update_data(regestration="OK")
     arr = [data["name"], data["mail"], message.from_user.username, data["number_phone"], data["school"], data["class_school"], data["parent_name"], data["number_parents"], data["one_issue"], data["two_issue"], data["three_issue"]]
 
@@ -140,8 +149,8 @@ async def regestration(message: Message, state: FSMContext):
     append_full_info_in_xlsx(arr)
 
     await state.clear()
-
-    await message.answer(text=TEXT_REGIST, reply_markup=ReplyKeyboardRemove(), parse_mode="HTML")
+    await state.set_state(value_Feedback.f_one)
+    await message.answer(text=TEXT_MAIN_FEEEDBACK, reply_markup=FEEDBACK_BUTTON, parse_mode="HTML")
 
 @dp.message(Form.registration, F.text == "НЕТ❌")
 async def not_registration(message: Message, state: FSMContext) -> None:
@@ -150,6 +159,56 @@ async def not_registration(message: Message, state: FSMContext) -> None:
 
     await message.answer(text=TEXT_REST, reply_markup=ReplyKeyboardRemove())
     await message.answer(text=TEXT_NAME)
+
+@dp.message(value_Feedback.f_one, F.text == "Оставить обратную связь")
+async def one_feedback(msg: Message, state: FSMContext) -> None:
+    await state.set_state(value_Feedback.f_two)
+
+    await msg.answer(text=TEXT_ANSWER_FEEDBACK)
+    await msg.answer(text=TEXT_FEEDBACK_ONE, reply_markup=FEEDBACK_BUTTONS)
+
+@dp.message(value_Feedback.f_two, F.text)
+async def two_feedback(msg: Message, state: FSMContext) -> None:
+    await state.update_data(Feedback_one=msg.text)
+    await state.set_state(value_Feedback.f_three)
+
+    await msg.answer(text=TEXT_FEEDBACK_TWO)
+
+@dp.message(value_Feedback.f_three, F.text)
+async def three_feedback(msg: Message, state: FSMContext) -> None:
+    await state.update_data(Feedback_two=msg.text)
+    await state.set_state(value_Feedback.f_four)
+
+    await msg.answer(text=TEXT_FEEDBACK_THREE)
+
+@dp.message(value_Feedback.f_four, F.text)
+async def four_feedback(msg: Message, state: FSMContext) -> None:
+    await state.update_data(Feedback_three=msg.text)
+    await state.set_state(value_Feedback.f_five)
+
+    await msg.answer(text=TEXT_FEEDBACK_FOUR)
+
+@dp.message(value_Feedback.f_five, F.text)
+async def five_feedback(msg: Message, state: FSMContext) -> None:
+    await state.update_data(Feedback_four=msg.text)
+    await state.set_state(value_Feedback.f_end)
+
+    await msg.answer(text=TEXT_FEEDBACK_FIVE, reply_markup=ReplyKeyboardRemove())
+
+@dp.message(value_Feedback.f_end, F.text)
+async def end_feedback(msg: Message, state: FSMContext) -> None:
+    data = await state.update_data(Feedback_five=msg.text)
+
+    arr = [data["Feedback_one"],
+           data["Feedback_two"],
+           data["Feedback_three"],
+           data["Feedback_four"],
+           data["Feedback_five"]]
+
+    append_in_Feedback_file(arr)
+
+    await state.clear()
+    await msg.answer(text=TEXT_END_FEEDBACK, reply_markup=ReplyKeyboardRemove())
 
 if __name__ == '__main__':
     dp.run_polling(bot)
